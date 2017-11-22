@@ -17,9 +17,6 @@ namespace ScaleTestV1_NoHost
     public static class Http
     {
         private static HttpClient client = new HttpClient();
-        private static AzureServiceTokenProvider azureServiceTokenProvider = new AzureServiceTokenProvider();
-        private static KeyVaultClient kvClient = new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(azureServiceTokenProvider.KeyVaultTokenCallback), client);
-        private static string eventHubConnectionString;
         private static EventHubClient eventHubClient;
 
         public static string ConfigurationManager { get; private set; }
@@ -27,13 +24,16 @@ namespace ScaleTestV1_NoHost
         [FunctionName("Http")]
         public static async Task<HttpResponseMessage> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)]HttpRequestMessage req, TraceWriter log)
         {
-            if(string.IsNullOrEmpty(eventHubConnectionString))
+            log.Info("C# HTTP trigger function processed a request.");
+
+            if(eventHubClient == null)
             {
                 log.Info("Retrieving secret from keyvault");
-                eventHubConnectionString = (await kvClient.GetSecretAsync(Environment.GetEnvironmentVariable("EventHubSecretId"))).Value;
+                var azureServiceTokenProvider = new AzureServiceTokenProvider();
+                var kvClient = new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(azureServiceTokenProvider.KeyVaultTokenCallback), client);
+                string eventHubConnectionString = (await kvClient.GetSecretAsync(Environment.GetEnvironmentVariable("EventHubSecretId"))).Value;
                 eventHubClient = EventHubClient.CreateFromConnectionString(eventHubConnectionString);
             }
-            log.Info("C# HTTP trigger function processed a request.");
 
             JObject message = JObject.FromObject(new
             {
