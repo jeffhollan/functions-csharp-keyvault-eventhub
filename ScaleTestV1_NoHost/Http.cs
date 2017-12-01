@@ -31,14 +31,17 @@ namespace ScaleTestV1_NoHost
                 log.Info("Retrieving secret from keyvault");
                 var azureServiceTokenProvider = new AzureServiceTokenProvider();
                 var kvClient = new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(azureServiceTokenProvider.KeyVaultTokenCallback), client);
+                log.Info("Got secret");
                 string eventHubConnectionString = (await kvClient.GetSecretAsync(Environment.GetEnvironmentVariable("EventHubSecretId"))).Value;
                 eventHubClient = EventHubClient.CreateFromConnectionString(eventHubConnectionString);
+                log.Info("Created event hub client");
             }
 
             JObject message = JObject.FromObject(new
             {
                 data = await req.Content.ReadAsAsync<JObject>()
             });
+            log.Info("Sending to event hub");
             await eventHubClient.SendAsync(new EventData(Encoding.UTF8.GetBytes(message.ToString())));
 
             log.Info($"Sent message to Event Hub");
