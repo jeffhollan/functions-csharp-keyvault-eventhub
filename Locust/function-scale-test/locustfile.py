@@ -1,13 +1,15 @@
-from locust import HttpLocust, TaskSet
+from locust import HttpLocust, TaskSet, task
+import resource
+print(resource.getrlimit(resource.RLIMIT_STACK))
 
 # https://jehollan-scaletestv1nohost.azurewebsites.net/api/Http
-def call(l):
-    l.client.post("/api/Http", {"scaletest":"01"})
+class MyTaskSet(TaskSet):
+    @task
+    def call(l):
+        r = l.client.post("/api/Http", {"scaletest":"01"})
+        r.raise_for_status()
 
-class UserBehavior(TaskSet):
-    tasks = {call: 1}
-
-class WebsiteUser(HttpLocust):
-    task_set = UserBehavior
-    min_wait = 500
-    max_wait = 1000
+class MyLocust(HttpLocust):
+    task_set = MyTaskSet
+    min_wait = 0
+    max_wait = 0
