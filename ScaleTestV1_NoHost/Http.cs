@@ -17,12 +17,16 @@ namespace ScaleTestV1_NoHost
     public static class Http
     {
         private static HttpClient client = new HttpClient();
+#if !DEBUG
         private static EventHubClient eventHubClient;
+#else
+        private static EventHubClient eventHubClient = EventHubClient.CreateFromConnectionString(Environment.GetEnvironmentVariable("local_EHSecret"));
+#endif
 
         public static string ConfigurationManager { get; private set; }
 
         [FunctionName("Http")]
-        public static async Task<HttpResponseMessage> Run([HttpTrigger(AuthorizationLevel.Anonymous, "get", "post", Route = null)]HttpRequestMessage req, TraceWriter log)
+        public static async Task<HttpResponseMessage> Run([HttpTrigger(AuthorizationLevel.Anonymous, "post", Route = null)]HttpRequestMessage req, TraceWriter log)
         {
             log.Info("C# HTTP trigger function processed a request.");
 
